@@ -3,53 +3,56 @@ const Chapter = require('../models/Chapter');
 const User = require('../models/User');
 const Progress = require('../models/Progress');
 
- 
+// @desc    Create a course
+// @route   POST /api/courses
+// @access  Private/Admin
 const createCourse = async (req, res) => {
-    const { title, description, image, initialStudentEmail } = req.body;
-
-    let students = [];
-    if (initialStudentEmail) {
-        const student = await User.findOne({ email: initialStudentEmail });
-        if (student && student.role === 'student') {
-            students.push(student._id);
-        }
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Only admins can create courses' });
     }
+
+    const { title, description, category, price, oldPrice, duration, level, image } = req.body;
 
     const course = new Course({
         title,
         description,
+        category: category || 'General',
+        price: price || 0,
+        oldPrice,
+        duration: duration || '4 Weeks',
+        level: level || 'Beginner',
         image: image || 'https://via.placeholder.com/300',
-        mentor: req.user._id,
-        students,
+        mentor: req.user._id, // Keep field for DB compatibility but it's always the admin now
+        students: [],
     });
 
     const createdCourse = await course.save();
     res.status(201).json(createdCourse);
 };
 
- 
-const getMyCourses = async (req, res) => {
-    const courses = await Course.find({ mentor: req.user._id });
-    res.json(courses);
-};
-
- 
- 
+// @desc    Get all courses (Global Catalog)
 const getAllCourses = async (req, res) => {
     const courses = await Course.find({}).populate('mentor', 'name email');
     res.json(courses);
 };
- 
+
+// @desc    Update course
 const updateCourse = async (req, res) => {
     const course = await Course.findById(req.params.id);
 
     if (course) {
-        if (req.user.role !== 'admin' && course.mentor.toString() !== req.user._id.toString()) {
+        if (req.user.role !== 'admin') {
             return res.status(401).json({ message: 'Not authorized to update this course' });
         }
 
         course.title = req.body.title || course.title;
         course.description = req.body.description || course.description;
+        course.category = req.body.category || course.category;
+        course.price = req.body.price || course.price;
+        course.oldPrice = req.body.oldPrice || course.oldPrice;
+        course.duration = req.body.duration || course.duration;
+        course.level = req.body.level || course.level;
+        course.image = req.body.image || course.image;
 
         const updatedCourse = await course.save();
         res.json(updatedCourse);
@@ -58,37 +61,36 @@ const updateCourse = async (req, res) => {
     }
 };
 
- 
+// @desc    Delete course
 const deleteCourse = async (req, res) => {
     const course = await Course.findById(req.params.id);
 
     if (course) {
-        if (req.user.role !== 'admin' && course.mentor.toString() !== req.user._id.toString()) {
+        if (req.user.role !== 'admin') {
             return res.status(401).json({ message: 'Not authorized to delete this course' });
         }
 
         await course.deleteOne();
-        await Chapter.deleteMany({ course: course._id }); // Cascade delete chapters
+        await Chapter.deleteMany({ course: course._id });
         res.json({ message: 'Course removed' });
     } else {
         res.status(404).json({ message: 'Course not found' });
     }
 };
 
- 
+// @desc    Assign course to student
 const assignCourse = async (req, res) => {
     const { email } = req.body;
     const course = await Course.findById(req.params.id);
 
     if (course) {
-        if (course.mentor.toString() !== req.user._id.toString()) {
+        if (req.user.role !== 'admin') {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
-        // Check if student exists by email
         const student = await User.findOne({ email });
         if (!student || student.role !== 'student') {
-            return res.status(400).json({ message: 'Student not found with that email' });
+            return res.status(400).json({ message: 'Student not found' });
         }
 
         if (!course.students.includes(student._id)) {
@@ -102,15 +104,31 @@ const assignCourse = async (req, res) => {
     }
 };
 
- 
- 
+// @desc    Self-enroll in course
+const enrollCourse = async (req, res) => {
+    const course = await Course.findById(req.params.id);
+
+    if (course) {
+        if (course.students.includes(req.user._id)) {
+            return res.status(400).json({ message: 'Already enrolled' });
+        }
+
+        course.students.push(req.user._id);
+        await course.save();
+
+        res.json({ message: 'Enrolled successfully' });
+    } else {
+        res.status(404).json({ message: 'Course not found' });
+    }
+};
+
+// @desc    Add chapter to course
 const addChapter = async (req, res) => {
-     
     const { title, description, videoUrl, sequenceOrder } = req.body;
     const course = await Course.findById(req.params.id);
 
     if (course) {
-        if (course.mentor.toString() !== req.user._id.toString()) {
+        if (req.user.role !== 'admin') {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
@@ -128,54 +146,57 @@ const addChapter = async (req, res) => {
         res.status(404).json({ message: 'Course not found' });
     }
 };
- 
+
+// @desc    Get chapters of a course
 const getChapters = async (req, res) => {
     const course = await Course.findById(req.params.id);
-
     if (!course) return res.status(404).json({ message: 'Course not found' });
 
-    // Check access
-    if (req.user.role === 'mentor' && course.mentor.toString() !== req.user._id.toString()) {
-        return res.status(403).json({ message: 'Not authorized' });
-    }
     if (req.user.role === 'student' && !course.students.includes(req.user._id)) {
-        return res.status(403).json({ message: 'Not enrolled in this course' });
+        return res.status(403).json({ message: 'Not enrolled' });
     }
 
     const chapters = await Chapter.find({ course: req.params.id }).sort({ sequenceOrder: 1 });
     res.json(chapters);
 };
 
- 
+// @desc    Update chapter
 const updateChapter = async (req, res) => {
     const { title, description, videoUrl, sequenceOrder } = req.body;
-    const course = await Course.findById(req.params.id);
+    const chapter = await Chapter.findById(req.params.chapterId);
 
-    if (course) {
-        if (course.mentor.toString() !== req.user._id.toString()) {
+    if (chapter) {
+        if (req.user.role !== 'admin') {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
-        const chapter = await Chapter.findById(req.params.chapterId);
-        if (chapter) {
-            chapter.title = title || chapter.title;
-            chapter.description = description || chapter.description;
-            chapter.videoUrl = videoUrl || chapter.videoUrl;
-            chapter.sequenceOrder = sequenceOrder || chapter.sequenceOrder;
+        chapter.title = title || chapter.title;
+        chapter.description = description || chapter.description;
+        chapter.videoUrl = videoUrl || chapter.videoUrl;
+        chapter.sequenceOrder = sequenceOrder || chapter.sequenceOrder;
 
-            const updatedChapter = await chapter.save();
-            res.json(updatedChapter);
-        } else {
-            res.status(404).json({ message: 'Chapter not found' });
-        }
+        const updatedChapter = await chapter.save();
+        res.json(updatedChapter);
     } else {
-        res.status(404).json({ message: 'Course not found' });
+        res.status(404).json({ message: 'Chapter not found' });
     }
 };
 
-// @desc    Get courses assigned to student
-// @route   GET /api/courses/student
-// @access  Private/Student
+// @desc    Delete chapter
+const deleteChapter = async (req, res) => {
+    const chapter = await Chapter.findById(req.params.chapterId);
+    if (chapter) {
+        if (req.user.role !== 'admin') {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+        await chapter.deleteOne();
+        res.json({ message: 'Chapter removed' });
+    } else {
+        res.status(404).json({ message: 'Chapter not found' });
+    }
+};
+
+// @desc    Get courses for logged in student
 const getStudentCourses = async (req, res) => {
     const courses = await Course.find({ students: req.user._id }).populate('mentor', 'name');
 
@@ -196,62 +217,24 @@ const getStudentCourses = async (req, res) => {
     res.json(coursesWithProgress);
 };
 
-// @desc    Get students enrolled in a course with progress
-// @route   GET /api/courses/:id/students
-// @access  Private/Mentor/Admin
+// @desc    Get enrolled students for a course
 const getEnrolledStudents = async (req, res) => {
     const course = await Course.findById(req.params.id);
-
     if (course) {
-        if (req.user.role !== 'admin' && course.mentor.toString() !== req.user._id.toString()) {
+        if (req.user.role !== 'admin') {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
         const chapterCount = await Chapter.countDocuments({ course: course._id });
-
-        // Get detailed student info and their progress
         const studentsData = await Promise.all(course.students.map(async (studentId) => {
             const student = await User.findById(studentId).select('name email');
             if (!student) return null;
-
             const progress = await Progress.findOne({ student: studentId, course: course._id });
             const completedCount = progress ? progress.completedChapters.length : 0;
             const percent = chapterCount === 0 ? 0 : Math.round((completedCount / chapterCount) * 100);
-
-            return {
-                _id: student._id,
-                name: student.name,
-                email: student.email,
-                completedChapters: completedCount,
-                totalChapters: chapterCount,
-                progress: percent,
-            };
+            return { _id: student._id, name: student.name, email: student.email, progress: percent };
         }));
-
         res.json(studentsData.filter(s => s !== null));
-    } else {
-        res.status(404).json({ message: 'Course not found' });
-    }
-};
-
-// @desc    Delete chapter
-// @route   DELETE /api/courses/:id/chapters/:chapterId
-// @access  Private/Mentor
-const deleteChapter = async (req, res) => {
-    const course = await Course.findById(req.params.id);
-
-    if (course) {
-        if (course.mentor.toString() !== req.user._id.toString()) {
-            return res.status(401).json({ message: 'Not authorized' });
-        }
-
-        const chapter = await Chapter.findById(req.params.chapterId);
-        if (chapter) {
-            await chapter.deleteOne();
-            res.json({ message: 'Chapter removed' });
-        } else {
-            res.status(404).json({ message: 'Chapter not found' });
-        }
     } else {
         res.status(404).json({ message: 'Course not found' });
     }
@@ -259,15 +242,15 @@ const deleteChapter = async (req, res) => {
 
 module.exports = {
     createCourse,
-    getMyCourses,
     updateCourse,
     deleteCourse,
     assignCourse,
+    enrollCourse,
     addChapter,
     getChapters,
-    getStudentCourses,
     updateChapter,
     deleteChapter,
+    getStudentCourses,
     getEnrolledStudents,
     getAllCourses,
 };

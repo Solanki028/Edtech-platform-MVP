@@ -33,6 +33,10 @@ const progressRoutes = require('./routes/progressRoutes');
 app.use('/api/progress', progressRoutes);
 const certificateRoutes = require('./routes/certificateRoutes');
 app.use('/api/certificates', certificateRoutes);
+const enrollmentRoutes = require('./routes/enrollmentRoutes');
+app.use('/api/enrollments', enrollmentRoutes);
+const leadRoutes = require('./routes/leadRoutes');
+app.use('/api/leads', leadRoutes);
 
 
 const PORT = process.env.PORT || 5000;

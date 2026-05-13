@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, deleteUser, approveMentor, getAnalytics, updatePassword, createUser, toggleUserStatus } = require('../controllers/userController');
+const { getUsers, deleteUser, getAnalytics, updatePassword, createUser, toggleUserStatus } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -12,9 +12,6 @@ router.route('/:id')
 
 router.route('/:id/toggle-status')
     .put(protect, authorize('admin'), toggleUserStatus);
-
-router.route('/:id/approve-mentor')
-    .put(protect, authorize('admin'), approveMentor);
 
 router.route('/analytics')
     .get(protect, authorize('admin'), getAnalytics);

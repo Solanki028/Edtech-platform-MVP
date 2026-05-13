@@ -18,12 +18,8 @@ const userSchema = mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['student', 'mentor', 'admin'],
+            enum: ['student', 'admin'],
             default: 'student',
-        },
-        isApproved: {
-            type: Boolean,
-            default: false,
         },
         isActive: {
             type: Boolean,

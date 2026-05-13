@@ -37,10 +37,7 @@ const authUser = async (req, res) => {
         res.status(500).json({ message: error.message, stack: error.stack });
     }
 };
-
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
+ 
 const registerUser = async (req, res) => {
     console.log("DEBUG: registerUser called");
     console.log("DEBUG: Request Body:", req.body);
@@ -51,11 +48,7 @@ const registerUser = async (req, res) => {
     if (userExists) {
         return res.status(400).json({ message: 'User already exists' });
     }
-
-    // Auto-approve if not mentor (admin seed might be needed, but for now allow all non-mentors or default to student)
-    // Logic: Student = approved, Mentor = not approved. Admin = manually seeded or special key? 
-    // For Kata simplicity, allow registering as any role, but Mentor defaults to isApproved=false.
-
+ 
     let isApproved = true;
     if (role === 'mentor') {
         isApproved = false;

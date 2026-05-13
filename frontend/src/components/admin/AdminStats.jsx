@@ -1,50 +1,42 @@
-
-const AdminStats = ({ analytics, pendingMentorsCount }) => {
+const AdminStats = ({ analytics }) => {
     if (!analytics) return null;
 
     const stats = [
         {
             title: "Total Users",
             value: analytics.totalUsers,
-            subtext: `Students: ${analytics.totalStudents} | Mentors: ${analytics.totalMentors}`,
-            color: "bg-blue-50 border-blue-200 text-blue-700",
-            icon: "👥"
+            subtext: `${analytics.totalStudents} Students Enrolled`,
+            icon: "👥",
+            color: "bg-blue-50 text-blue-600"
         },
         {
             title: "Total Courses",
             value: analytics.totalCourses,
-            subtext: "Active courses",
-            color: "bg-green-50 border-green-200 text-green-700",
-            icon: "📚"
+            subtext: "Live on platform",
+            icon: "📚",
+            color: "bg-green-50 text-green-600"
         },
         {
-            title: "Total Chapters",
+            title: "Learning Content",
             value: analytics.totalChapters,
-            subtext: "Learning modules",
-            color: "bg-purple-50 border-purple-200 text-purple-700",
-            icon: "📑"
-        },
-        {
-            title: "Pending Mentors",
-            value: pendingMentorsCount,
-            subtext: "Requires approval",
-            color: "bg-yellow-50 border-yellow-200 text-yellow-700",
-            icon: "⚠️"
+            subtext: "Chapters published",
+            icon: "⚡",
+            color: "bg-violet-50 text-violet-600"
         }
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {stats.map((stat, index) => (
-                <div key={index} className={`p-6 rounded-xl border ${stat.color} shadow-sm transition-transform hover:scale-105 duration-200`}>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-medium opacity-80">{stat.title}</p>
-                            <h3 className="text-3xl font-bold mt-1">{stat.value}</h3>
-                        </div>
-                        <span className="text-2xl">{stat.icon}</span>
+                <div key={index} className="card-premium flex items-center gap-6 group hover:-translate-y-1 transition-all duration-300">
+                    <div className={`w-14 h-14 ${stat.color} rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}>
+                        {stat.icon}
                     </div>
-                    {stat.subtext && <p className="text-xs mt-3 opacity-75">{stat.subtext}</p>}
+                    <div>
+                        <div className="text-sm font-bold text-slate-400 uppercase tracking-wider">{stat.title}</div>
+                        <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+                        <div className="text-[10px] text-slate-400 font-medium mt-1">{stat.subtext}</div>
+                    </div>
                 </div>
             ))}
         </div>

@@ -18,6 +18,16 @@ const progressSchema = mongoose.Schema(
                 ref: 'Chapter',
             },
         ],
+        quizScore: {
+            type: Number,
+            default: 0
+        },
+        attendanceLog: [
+            {
+                chapterId: { type: mongoose.Schema.Types.ObjectId, ref: 'Chapter' },
+                watchedAt: { type: Date, default: Date.now }
+            }
+        ]
     },
     {
         timestamps: true,

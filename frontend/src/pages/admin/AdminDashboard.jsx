@@ -1,164 +1,167 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import AdminStats from '../../components/admin/AdminStats';
 import UserManagement from '../../components/admin/UserManagement';
 import CourseManagement from '../../components/admin/CourseManagement';
-import AdminSettings from '../../components/admin/AdminSettings';
+import LeadManagement from '../../components/admin/LeadManagement';
+import EnrollmentManagement from '../../components/admin/EnrollmentManagement';
 
 const AdminDashboard = () => {
+    const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState('overview');
+    const [analytics, setAnalytics] = useState(null);
     const [users, setUsers] = useState([]);
     const [courses, setCourses] = useState([]);
-    const [analytics, setAnalytics] = useState(null);
-    const [activeTab, setActiveTab] = useState('overview');
-    const { user } = useAuth();
+    const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const loadData = async () => {
-            await Promise.all([fetchUsers(), fetchAnalytics(), fetchAllCourses()]);
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const config = { headers: { Authorization: `Bearer ${user.token}` } };
+            const [statsRes, usersRes, coursesRes, leadsRes] = await Promise.all([
+                axios.get(`${import.meta.env.VITE_API_URL}/api/users/analytics`, config),
+                axios.get(`${import.meta.env.VITE_API_URL}/api/users`, config),
+                axios.get(`${import.meta.env.VITE_API_URL}/api/courses`, config),
+                axios.get(`${import.meta.env.VITE_API_URL}/api/leads`, config)
+            ]);
+            setAnalytics(statsRes.data);
+            setUsers(usersRes.data);
+            setCourses(coursesRes.data);
+            setLeads(leadsRes.data);
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        } finally {
             setLoading(false);
-        };
-        loadData();
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
     }, []);
 
-    const fetchAnalytics = async () => {
-        try {
-            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/users/analytics`, {
-                headers: { Authorization: `Bearer ${user.token}` },
-            });
-            setAnalytics(data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const fetchAllCourses = async () => {
-        try {
-            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/courses`, {
-                headers: { Authorization: `Bearer ${user.token}` },
-            });
-            setCourses(data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const fetchUsers = async () => {
-        try {
-            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, {
-                headers: { Authorization: `Bearer ${user.token}` },
-            });
-            setUsers(data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const approveMentor = async (id) => {
-        try {
-            await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${id}/approve-mentor`, {}, {
-                headers: { Authorization: `Bearer ${user.token}` },
-            });
-            // Refresh data
-            fetchUsers();
-            fetchAnalytics();
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
     const deleteUser = async (id) => {
-        if (!window.confirm('Are you sure?')) return;
+        if (!window.confirm('Are you sure you want to delete this user?')) return;
         try {
             await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/${id}`, {
-                headers: { Authorization: `Bearer ${user.token}` },
+                headers: { Authorization: `Bearer ${user.token}` }
             });
-            fetchUsers();
-            fetchAnalytics();
+            fetchData();
         } catch (error) {
-            console.error(error);
+            alert('Error deleting user');
         }
-    }
+    };
 
-    if (loading) {
-        return <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
-    }
+    const tabs = [
+        { id: 'overview', name: 'Overview', icon: '📊' },
+        { id: 'courses', name: 'Courses', icon: '📚' },
+        { id: 'users', name: 'Users', icon: '👥' },
+        { id: 'payments', name: 'Payments', icon: '💰' },
+        { id: 'leads', name: 'Leads', icon: '📢' },
+    ];
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Top Navigation Bar */}
-            <div className="bg-white shadow-sm border-b border-gray-200 sticky top-16 md:top-0 z-10">
-                <div className="container mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                        <div className="bg-indigo-600 p-2 rounded-lg shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                            </svg>
-                        </div>
-                        <h1 className="text-xl md:text-2xl font-bold text-gray-800 tracking-tight">Admin<span className="text-indigo-600">Portal</span></h1>
-                    </div>
-
-                    <div className="w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-                        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-max md:w-auto mx-auto md:mx-0">
-                            {['overview', 'users', 'courses', 'settings'].map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setActiveTab(tab)}
-                                    className={`px-3 md:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 capitalize whitespace-nowrap
-                                    ${activeTab === tab
-                                            ? 'bg-white text-indigo-600 shadow-sm'
-                                            : 'text-gray-500 hover:text-gray-900'}`
-                                    }
-                                >
-                                    {tab}
-                                </button>
-                            ))}
+        <div className="min-h-screen bg-slate-50 flex pt-20">
+            {/* Sidebar */}
+            <aside className="w-72 bg-white border-r border-slate-100 hidden lg:flex flex-col sticky top-20 h-[calc(100vh-80px)]">
+                <div className="p-8 border-b border-slate-50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">A</div>
+                        <div>
+                            <div className="text-sm font-extrabold text-slate-900 tracking-tight">ADMIN PANEL</div>
+                            <div className="text-[10px] font-bold text-blue-600 tracking-[0.2em] uppercase">ILP Marketplace</div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Main Content Area */}
-            <main className="container mx-auto px-6 py-8">
+                <nav className="p-6 space-y-2 flex-1">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-xl transition-all duration-300 font-bold text-sm ${
+                                activeTab === tab.id 
+                                ? 'bg-blue-600 text-white shadow-xl shadow-blue-200' 
+                                : 'text-slate-500 hover:bg-slate-50'
+                            }`}
+                        >
+                            <span className="text-lg">{tab.icon}</span>
+                            {tab.name}
+                        </button>
+                    ))}
+                </nav>
 
-                {/* Always show high-level stats on Overview */}
-                {activeTab === 'overview' && (
-                    <div className="animate-fade-in-up">
-                        <h2 className="text-xl font-semibold mb-6 text-gray-700">Platform Overview</h2>
-                        <AdminStats
-                            analytics={analytics}
-                            pendingMentorsCount={users.filter(u => u.role === 'mentor' && !u.isApproved).length}
-                        />
+                <div className="p-6 mt-auto">
+                    <div className="card-premium !p-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                        <div className="text-xs font-bold opacity-50 mb-1 uppercase tracking-widest">Admin Access</div>
+                        <div className="text-sm font-bold truncate">{user.name}</div>
+                    </div>
+                </div>
+            </aside>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Quick Views */}
-                            <div className="opacity-75 pointer-events-none">
-                                <UserManagement users={users.slice(0, 5)} approveMentor={approveMentor} deleteUser={deleteUser} />
+            {/* Main Content */}
+            <main className="flex-1 p-6 md:p-12 overflow-y-auto">
+                {loading ? (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    </div>
+                ) : (
+                    <div className="max-w-7xl mx-auto space-y-12 animate-fade-in">
+                        {activeTab === 'overview' && (
+                            <>
+                                <header>
+                                    <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Dashboard Overview</h1>
+                                    <p className="text-slate-500 font-medium">Welcome back, {user.name.split(' ')[0]}!</p>
+                                </header>
+                                <AdminStats analytics={analytics} />
+                                <div className="grid lg:grid-cols-2 gap-8">
+                                    <div className="card-premium">
+                                        <h3 className="text-lg font-bold text-slate-900 mb-6">Recent Counseling Leads</h3>
+                                        <LeadManagement leads={leads.slice(0, 5)} hideHeader={true} />
+                                    </div>
+                                    <div className="card-premium">
+                                        <h3 className="text-lg font-bold text-slate-900 mb-6">System Health</h3>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
+                                                <span className="text-sm font-bold text-slate-600">Active Students</span>
+                                                <span className="text-lg font-black text-slate-900">{users.filter(u => u.role === 'student').length}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
+                                                <span className="text-sm font-bold text-slate-600">Total Courses</span>
+                                                <span className="text-lg font-black text-slate-900">{courses.length}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {activeTab === 'courses' && (
+                            <div className="card-premium">
+                                <CourseManagement courses={courses} refreshData={fetchData} />
                             </div>
-                            <div className="opacity-75 pointer-events-none">
-                                <CourseManagement courses={courses.slice(0, 5)} />
+                        )}
+
+                        {activeTab === 'users' && (
+                            <div className="card-premium">
+                                <UserManagement users={users} deleteUser={deleteUser} />
                             </div>
-                        </div>
+                        )}
+
+                        {activeTab === 'payments' && (
+                            <div className="card-premium">
+                                <EnrollmentManagement />
+                            </div>
+                        )}
+
+                        {activeTab === 'leads' && (
+                            <div className="card-premium">
+                                <LeadManagement leads={leads} />
+                            </div>
+                        )}
                     </div>
                 )}
-
-                {activeTab === 'users' && (
-                    <div className="animate-fade-in">
-                        <UserManagement users={users} approveMentor={approveMentor} deleteUser={deleteUser} />
-                    </div>
-                )}
-
-                {activeTab === 'courses' && (
-                    <div className="animate-fade-in">
-                        <CourseManagement courses={courses} refreshData={fetchAllCourses} />
-                    </div>
-                )}
-
-                {activeTab === 'settings' && (
-                    <AdminSettings />
-                )}
-
             </main>
         </div>
     );

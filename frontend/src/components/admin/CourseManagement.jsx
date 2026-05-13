@@ -1,286 +1,274 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import ChapterManagement from './ChapterManagement';
 
-const CourseManagement = ({ courses, refreshData }) => {
+const CourseManagement = ({ courses, refreshData, hideCreate = false }) => {
     const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCourse, setSelectedCourse] = useState(null);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
-    const [students, setStudents] = useState([]);
-    const [loadingStudents, setLoadingStudents] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalType, setModalType] = useState('create'); // 'create' or 'edit'
+    const [view, setView] = useState('list'); // 'list' or 'chapters'
 
-    // Filter Logic
     const filteredCourses = courses.filter(course =>
         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.mentor?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        course.category?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Delete Course
     const handleDelete = async (courseId) => {
-        if (!window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) return;
+        if (!window.confirm('Are you sure you want to delete this course?')) return;
         try {
             await axios.delete(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}`, {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
             refreshData();
         } catch (error) {
-            console.error('Failed to delete course', error);
-            alert('Failed to delete course');
+            console.error(error);
         }
     };
 
-    // Open Edit Modal
-    const openEditModal = (course) => {
+    const openModal = (type, course = null) => {
+        setModalType(type);
         setSelectedCourse(course);
-        setIsEditModalOpen(true);
+        setIsModalOpen(true);
     };
 
-    // Open Student Modal
-    const openStudentModal = async (course) => {
+    const manageChapters = (course) => {
         setSelectedCourse(course);
-        setIsStudentModalOpen(true);
-        setLoadingStudents(true);
-        try {
-            const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/courses/${course._id}/students`, {
-                headers: { Authorization: `Bearer ${user.token}` }
-            });
-            setStudents(data);
-        } catch (error) {
-            console.error('Failed to fetch students', error);
-            setStudents([]);
-        } finally {
-            setLoadingStudents(false);
-        }
+        setView('chapters');
     };
+
+    if (view === 'chapters') {
+        return <ChapterManagement course={selectedCourse} onBack={() => setView('list')} />;
+    }
 
     return (
-        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 animate-fade-in">
-            {/* Header & Search */}
-            <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                <h2 className="text-xl font-bold text-gray-800">Course Management</h2>
-                <div className="relative w-full md:w-64">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </span>
+        <div className="space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div className="relative w-full md:w-80">
                     <input
                         type="text"
                         placeholder="Search courses..."
-                        className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                        className="w-full bg-slate-100 border-none rounded-xl py-2.5 px-6 pl-12 focus:ring-2 focus:ring-blue-500/20 outline-none text-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                    <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                 </div>
+                {!hideCreate && (
+                    <button 
+                        onClick={() => openModal('create')}
+                        className="btn-primary !py-2.5 !px-8 text-sm w-full md:w-auto"
+                    >
+                        + Create Course
+                    </button>
+                )}
             </div>
 
-            {/* Table */}
             <div className="overflow-x-auto">
-                <table className="min-w-full">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course Title</th>
-                            <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentor</th>
-                            <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrolled</th>
-                            <th className="py-3 px-6 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <table className="w-full text-left">
+                    <thead>
+                        <tr className="border-b border-slate-100">
+                            <th className="pb-4 font-bold text-slate-400 uppercase tracking-wider text-xs">Course</th>
+                            <th className="pb-4 font-bold text-slate-400 uppercase tracking-wider text-xs text-center">Category</th>
+                            <th className="pb-4 font-bold text-slate-400 uppercase tracking-wider text-xs text-center">Price</th>
+                            <th className="pb-4 font-bold text-slate-400 uppercase tracking-wider text-xs text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filteredCourses.length > 0 ? (
-                            filteredCourses.map((c) => (
-                                <tr key={c._id} className="hover:bg-gray-50 transition-colors group">
-                                    <td className="py-4 px-6">
-                                        <div className="text-sm font-semibold text-gray-900">{c.title}</div>
-                                        <div className="text-xs text-gray-500 truncate max-w-xs">{c.description}</div>
-                                    </td>
-                                    <td className="py-4 px-6 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold mr-2">
-                                                {c.mentor?.name?.charAt(0) || '?'}
-                                            </div>
-                                            <span className="text-sm text-gray-700 font-medium">{c.mentor?.name || 'Unknown'}</span>
+                    <tbody className="divide-y divide-slate-50">
+                        {filteredCourses.map((c) => (
+                            <tr key={c._id} className="hover:bg-slate-50 transition-colors group">
+                                <td className="py-4">
+                                    <div className="flex items-center gap-4">
+                                        <img src={c.image} alt="" className="w-12 h-12 rounded-lg object-cover" />
+                                        <div>
+                                            <div className="font-bold text-slate-900">{c.title}</div>
+                                            <div className="text-xs text-slate-400">{c.duration} • {c.level}</div>
                                         </div>
-                                    </td>
-                                    <td className="py-4 px-6 whitespace-nowrap">
-                                        <button
-                                            onClick={() => openStudentModal(c)}
-                                            className="px-3 py-1 text-xs font-medium bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors flex items-center gap-1"
+                                    </div>
+                                </td>
+                                <td className="py-4 text-center">
+                                    <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                        {c.category}
+                                    </span>
+                                </td>
+                                <td className="py-4 text-center font-bold text-slate-900">
+                                    ₹{c.price}
+                                </td>
+                                <td className="py-4 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <button 
+                                            onClick={() => manageChapters(c)}
+                                            className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-blue-100"
                                         >
-                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            {c.students.length} Students
+                                            Content
                                         </button>
-                                    </td>
-                                    <td className="py-4 px-6 whitespace-nowrap text-center">
-                                        <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={() => openEditModal(c)}
-                                                className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                                title="Edit Course"
-                                            >
-                                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(c._id)}
-                                                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                                title="Delete Course"
-                                            >
-                                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="4" className="py-12 text-center text-gray-500">
-                                    No courses found matching "{searchTerm}"
+                                        <button 
+                                            onClick={() => openModal('edit', c)}
+                                            className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                        </button>
+                                        <button 
+                                            onClick={() => handleDelete(c._id)}
+                                            className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
-                        )}
+                        ))}
                     </tbody>
                 </table>
             </div>
 
-            {/* Modals */}
-            {isEditModalOpen && (
-                <EditCourseModal
+            {isModalOpen && (
+                <CourseModal
+                    type={modalType}
                     course={selectedCourse}
-                    onClose={() => setIsEditModalOpen(false)}
+                    onClose={() => setIsModalOpen(false)}
                     refreshData={refreshData}
-                />
-            )}
-
-            {isStudentModalOpen && (
-                <StudentListModal
-                    course={selectedCourse}
-                    students={students}
-                    loading={loadingStudents}
-                    onClose={() => setIsStudentModalOpen(false)}
                 />
             )}
         </div>
     );
 };
 
-// --- Sub Components ---
-
-const EditCourseModal = ({ course, onClose, refreshData }) => {
+const CourseModal = ({ type, course, onClose, refreshData }) => {
     const { user } = useAuth();
-    const [formData, setFormData] = useState({ title: course.title, description: course.description });
     const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState(
+        course || {
+            title: '',
+            description: '',
+            category: 'Web Development',
+            price: 0,
+            oldPrice: 0,
+            duration: '4 Weeks',
+            level: 'Beginner',
+            image: ''
+        }
+    );
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await axios.put(`${import.meta.env.VITE_API_URL}/api/courses/${course._id}`, formData, {
-                headers: { Authorization: `Bearer ${user.token}` }
-            });
+            if (type === 'create') {
+                await axios.post(`${import.meta.env.VITE_API_URL}/api/courses`, formData, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+            } else {
+                await axios.put(`${import.meta.env.VITE_API_URL}/api/courses/${course._id}`, formData, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+            }
             refreshData();
             onClose();
         } catch (error) {
             console.error(error);
-            alert('Failed to update course');
+            alert('Operation failed');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 animate-slide-up">
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Edit Course</h3>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-6">
+            <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-up">
+                <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h3 className="text-2xl font-bold text-slate-900">{type === 'create' ? 'Create New Course' : 'Edit Course'}</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-white rounded-full transition-colors">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-8 overflow-y-auto max-h-[70vh] grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Title</label>
                         <input
-                            type="text"
-                            className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-5 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                             value={formData.title}
                             onChange={e => setFormData({ ...formData, title: e.target.value })}
                             required
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <div className="md:col-span-2">
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Description</label>
                         <textarea
-                            className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                            rows="4"
+                            className="w-full px-5 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            rows="3"
                             value={formData.description}
                             onChange={e => setFormData({ ...formData, description: e.target.value })}
+                            required
                         />
                     </div>
-                    <div className="flex justify-end gap-3 pt-4">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                        <button type="submit" disabled={loading} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                            {loading ? 'Saving...' : 'Save Changes'}
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Category</label>
+                        <select 
+                            className="w-full px-5 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            value={formData.category}
+                            onChange={e => setFormData({ ...formData, category: e.target.value })}
+                        >
+                            <option>Web Development</option>
+                            <option>Data Science</option>
+                            <option>AI & ML</option>
+                            <option>Digital Marketing</option>
+                            <option>UI/UX Design</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Level</label>
+                        <select 
+                            className="w-full px-5 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            value={formData.level}
+                            onChange={e => setFormData({ ...formData, level: e.target.value })}
+                        >
+                            <option>Beginner</option>
+                            <option>Intermediate</option>
+                            <option>Advanced</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Price (₹)</label>
+                        <input
+                            type="number"
+                            className="w-full px-5 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            value={formData.price}
+                            onChange={e => setFormData({ ...formData, price: e.target.value })}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Duration</label>
+                        <input
+                            placeholder="e.g. 4 Weeks"
+                            className="w-full px-5 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            value={formData.duration}
+                            onChange={e => setFormData({ ...formData, duration: e.target.value })}
+                        />
+                    </div>
+                    <div className="md:col-span-2">
+                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Image URL</label>
+                         <input
+                            className="w-full px-5 py-3 rounded-xl bg-slate-50 border-none outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            value={formData.image}
+                            onChange={e => setFormData({ ...formData, image: e.target.value })}
+                            placeholder="https://images.unsplash.com/..."
+                        />
+                    </div>
+                    <div className="md:col-span-2 pt-4">
+                        <button type="submit" disabled={loading} className="w-full btn-primary !rounded-xl py-4">
+                            {loading ? 'Processing...' : (type === 'create' ? 'Launch Course' : 'Update Course')}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
     );
-};
-
-const StudentListModal = ({ course, students, loading, onClose }) => {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 animate-slide-up">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-gray-900">Enrolled Students <span className="text-gray-400 text-sm font-normal">({course.title})</span></h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                {loading ? (
-                    <div className="py-12 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>
-                ) : (
-                    <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
-                        <table className="min-w-full">
-                            <thead className="bg-gray-50 sticky top-0">
-                                <tr>
-                                    <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                    <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase">Progress</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {students.length > 0 ? (
-                                    students.map(student => (
-                                        <tr key={student._id}>
-                                            <td className="py-3 px-4 text-sm font-medium text-gray-900">{student.name}</td>
-                                            <td className="py-3 px-4 text-sm text-gray-500">{student.email}</td>
-                                            <td className="py-3 px-4 text-center">
-                                                <span className={`px-2 py-1 text-xs rounded-full font-bold ${student.progress === 100 ? 'bg-green-100 text-green-700' : 'bg-indigo-50 text-indigo-600'}`}>
-                                                    {student.progress}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="3" className="py-8 text-center text-gray-500">No students enrolled yet.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
+}
 
 export default CourseManagement;
