@@ -638,7 +638,7 @@ const Home = () => {
                         <div>
                             <h4 className="font-bold text-white">Contact</h4>
                             <ul className="mt-4 space-y-3 text-sm">
-                                <li>info@ilp.edu</li>
+                                <li>info@manzilchaser.com</li>
                                 <li>+91 98765 43210</li>
                                 <li>HSR Layout, Bangalore</li>
                             </ul>
