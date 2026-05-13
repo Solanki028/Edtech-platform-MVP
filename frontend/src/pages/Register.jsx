@@ -31,14 +31,14 @@ const Register = () => {
                 <div className="hidden lg:block w-1/2 relative bg-blue-600">
                     <img
                         src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
-                        alt="Join ILP"
+                        alt="Join ManzilChaser"
                         className="absolute inset-0 w-full h-full object-cover opacity-60"
                     />
                     <div className="absolute inset-0 bg-gradient-to-tr from-blue-700/80 to-violet-900/90"></div>
                     <div className="relative h-full p-12 flex flex-col justify-between text-white">
                         <Link to="/" className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 font-bold text-xl">I</div>
-                            <span className="text-2xl font-extrabold">ILP.</span>
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-600 font-bold text-xl">M</div>
+                            <span className="text-2xl font-extrabold">ManzilChaser.</span>
                         </Link>
                         <div>
                             <h2 className="text-4xl font-bold mb-6">Join the future of learning.</h2>

@@ -70,7 +70,7 @@ const AdminDashboard = () => {
                         <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">A</div>
                         <div>
                             <div className="text-sm font-extrabold text-slate-900 tracking-tight">ADMIN PANEL</div>
-                            <div className="text-[10px] font-bold text-blue-600 tracking-[0.2em] uppercase">ILP Marketplace</div>
+                            <div className="text-[10px] font-bold text-blue-600 tracking-[0.2em] uppercase">ManzilChaser Marketplace</div>
                         </div>
                     </div>
                 </div>

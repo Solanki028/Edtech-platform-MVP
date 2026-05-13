@@ -50,10 +50,10 @@ const Navbar = () => {
                     {/* Brand */}
                     <Link to="/" className="flex items-center gap-2 group">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:rotate-12 transition-transform">
-                            I
+                            M
                         </div>
                         <span className="text-2xl font-extrabold tracking-tight text-slate-900">
-                            ILP<span className="text-blue-600">.</span>
+                            ManzilChaser<span className="text-blue-600">.</span>
                         </span>
                     </Link>
 

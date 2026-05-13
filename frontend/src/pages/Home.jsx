@@ -261,7 +261,7 @@ const Home = () => {
                                 Learn calm, build sharp, grow with real career skills.
                             </h1>
                             <p className="mt-5 max-w-2xl text-base leading-7 text-[#556b64] sm:text-lg">
-                                ILP helps students, graduates, and working professionals learn technology, business,
+                                ManzilChaser helps students, graduates, and working professionals learn technology, business,
                                 and design through mentor-led cohorts, practical projects, and career support.
                             </p>
 
@@ -291,7 +291,7 @@ const Home = () => {
                                 <div className="p-5 lg:p-4">
                                     <div className="flex items-center justify-between border-b border-[#e4ded2] pb-3">
                                         <div>
-                                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a45f36]">Today on ILP</p>
+                                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#a45f36]">Today on ManzilChaser</p>
                                             <h2 className="mt-1 text-xl font-bold text-[#20312d]">Learner Progress</h2>
                                         </div>
                                         <span className="rounded-lg bg-[#edf6f0] px-3 py-1 text-xs font-bold text-[#3f6f5f]">Live</span>
@@ -485,7 +485,7 @@ const Home = () => {
                             <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#e8bd94]">Platform experience</p>
                             <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">Built for serious learners and education teams.</h2>
                             <p className="mt-4 leading-7 text-[#d5e2dc]">
-                                ILP combines learner experience, course delivery, admin control, progress tracking,
+                                ManzilChaser combines learner experience, course delivery, admin control, progress tracking,
                                 enrollments, and certification into one clean learning system.
                             </p>
                         </div>
@@ -619,11 +619,11 @@ const Home = () => {
                     <div className="grid gap-10 md:grid-cols-4">
                         <div className="md:col-span-2">
                             <div className="flex items-center gap-3">
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#c9845f] text-xl font-extrabold text-white">I</div>
-                                <span className="text-2xl font-extrabold text-white">ILP.</span>
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#c9845f] text-xl font-extrabold text-white">M</div>
+                                <span className="text-2xl font-extrabold text-white">ManzilChaser.</span>
                             </div>
                             <p className="mt-5 max-w-md text-sm leading-7">
-                                Internship Learning Platform helps learners build practical skills through structured courses,
+                                ManzilChaser helps learners build practical skills through structured courses,
                                 mentorship, projects, and career preparation.
                             </p>
                         </div>
